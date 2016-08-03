@@ -76,3 +76,9 @@ pyvenv.cfg
 include/
 share/
 pip-selfcheck.json
+bin/activate_this.py
+bin/easy_install-3.5
+bin/pip3.5
+bin/python-config
+bin/python3.5
+bin/wheel
