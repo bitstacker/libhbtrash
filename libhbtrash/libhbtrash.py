@@ -27,17 +27,13 @@ class Muell(object):
 class Muellplan(object):
     SERVERPATH="http://213.168.213.236/bremereb/bify/bify.jsp"
 
-    def __init__(self,street='',number='',addition='',alarm=''):
-        ical = self.getIcal(street,number,addition,alarm)
-        print(ical)        
-
     def getIcal(self,street='',number='',addition='',alarm=''):
-        bify = self.fetchBifyForStreetAndNumber(street,number,addition)
-        eventlist = self.findTrashEventsInContent(bify)
-        ical = self.getiCalFromEventlist(eventlist,alarm)
+        bify = self.__fetchBifyForStreetAndNumber(street,number,addition)
+        eventlist = self.__findTrashEventsInContent(bify)
+        ical = self.__getiCalFromEventlist(eventlist,alarm)
         return ical
 
-    def fetchBifyForStreetAndNumber(self,street,number,addition=''):
+    def __fetchBifyForStreetAndNumber(self,street,number,addition=''):
         street = urllib.parse.quote(street,encoding="ISO-8859-1")
         number = urllib.parse.quote(number,encoding="ISO-8859-1")
         if addition != '':
@@ -52,37 +48,37 @@ class Muellplan(object):
         content = content.replace("<nobr><br>","</nobr>")#Hack for parsing siblings
         return content
 
-    def findTrashEventsInContent(self,content):
+    def __findTrashEventsInContent(self,content):
         soup = BeautifulSoup(content, "lxml")
         eventlist = []
         
         for month in soup.find_all("b",text=re.compile("^\w+\s\d{4}")):
-            current_year = self.getYearFromMonthString(month.string)
+            current_year = self.__getYearFromMonthString(month.string)
             for sibling in month.find_next_siblings("nobr",text=re.compile("^(\(\w{2}\)\s)?\d{2}\.\d{2}\.\s")):
-                current_date = self.getDateObjectFromEventString(current_year,sibling.string)
-                trashtype = self.getTrashTypeFromEventString(sibling.string)
+                current_date = self.__getDateObjectFromEventString(current_year,sibling.string)
+                trashtype = self.__getTrashTypeFromEventString(sibling.string)
                 eventlist.append([current_date,str(trashtype)])
         return eventlist
     
-    def getYearFromMonthString(self, month_s):
+    def __getYearFromMonthString(self, month_s):
         year = month_s.split(" ")[1]
         return year
 
-    def getDateObjectFromEventString(self, current_year, date_s):
-        date_s = self.cutDayNoticeWhenNeeded(date_s)
+    def __getDateObjectFromEventString(self, current_year, date_s):
+        date_s = self.__cutDayNoticeWhenNeeded(date_s)
         complete_string = date_s.split()[0] + current_year
         the_datetime = datetime.strptime(complete_string,"%d.%m.%Y")
         the_date = date(the_datetime.year,the_datetime.month,the_datetime.day)
         return the_date
 
-    def cutDayNoticeWhenNeeded(self,date_s):
+    def __cutDayNoticeWhenNeeded(self,date_s):
         matcher = re.compile("^\(\w{2}\)\s") # For (Sa),(Fr) etc.
         if matcher.match(date_s):
             date_s = date_s[5:]
         return date_s
 
-    def getTrashTypeFromEventString(self, event_s):
-        event_s = self.cutDayNoticeWhenNeeded(event_s)
+    def __getTrashTypeFromEventString(self, event_s):
+        event_s = self.__cutDayNoticeWhenNeeded(event_s)
         trash_string = event_s[7:]
         if trash_string in ["Restmüll / Bioabfall","Restm. / Bioabf."]:
             trashtype = Muell(1)
@@ -94,7 +90,7 @@ class Muellplan(object):
             trashtype = Muell(0)
         return trashtype
 
-    def getiCalFromEventlist(self, eventlist, alarm):
+    def __getiCalFromEventlist(self, eventlist, alarm):
         cal = Calendar()
         cal.add('prodid', 'libhbtrash')
         cal.add('version', '0.1')
@@ -113,5 +109,3 @@ class Muellplan(object):
         cal = cal.to_ical()
         cal = cal.decode("utf-8")
         return cal
-
-

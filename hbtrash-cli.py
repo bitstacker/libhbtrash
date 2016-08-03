@@ -11,7 +11,8 @@ def usage():
         -S	--street	street name
         -N	--number	street number
         -O	--other		other number
-        -A	--alarm		alarm time
+        -A	--alarm		time when the alarm is displayed, in minutes
+        				(time before, 0 is exactly at 0:00)
         -h	--help		help"""
     print(text)
 
@@ -43,7 +44,8 @@ def main():
             assert False, "unhandled option"
 
     if street != ""  and number!= "" :
-        m = Muellplan(street, number, other, alarm)
+        m = Muellplan()
+        print(m.getIcal(street, number, other, alarm))
 
 if __name__ == "__main__":
     main()
