@@ -13,12 +13,13 @@ def usage():
         -O	--other		other number
         -A	--alarm		time when the alarm is displayed, in minutes
         				(time before, 0 is exactly at 0:00)
+        -n      --next          get only next event in json
         -h	--help		help"""
     print(text)
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "S:N:O:A:h", ["street=","number=","other=","alarm=","help"])
+        opts, args = getopt.getopt(sys.argv[1:], "S:N:O:A:hn", ["street=","number=","other=","alarm=","help","next"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err) # will print something like "option -a not recognized"
@@ -28,6 +29,7 @@ def main():
     number = ""
     other = ""
     alarm = ""
+    onlynext = False
     for o, a in opts:
         if o in ("-S", "--street"):
             street = a
@@ -40,12 +42,17 @@ def main():
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
+        elif o in ("-n", "--next"):
+            onlynext = True
         else:
             assert False, "unhandled option"
 
     if street != ""  and number!= "" :
         m = Muellplan()
-        print(m.getIcal(street, number, other, alarm))
+        if onlynext:
+            print(m.getNextDateJson(street, number, other))
+        else:    
+            print(m.getIcal(street, number, other, alarm))
 
 if __name__ == "__main__":
     main()

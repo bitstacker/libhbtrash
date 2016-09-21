@@ -1,10 +1,10 @@
-#/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 
 import os
 import urllib.parse
 import re
 import urllib.request
+import json
 from bs4 import BeautifulSoup
 from datetime import datetime,timedelta,date
 from icalendar import Calendar, Event, vDate, Alarm
@@ -22,6 +22,8 @@ class Muell(object):
             return "Tannenbaumabfuhr"
         else:
             return "Unbekannt"
+    def getType(self):
+        return self.typ
     
     
 class Muellplan(object):
@@ -57,7 +59,7 @@ class Muellplan(object):
             for sibling in month.find_next_siblings("nobr",text=re.compile("^(\(\w{2}\)\s)?\d{2}\.\d{2}\.\s")):
                 current_date = self.__getDateObjectFromEventString(current_year,sibling.string)
                 trashtype = self.__getTrashTypeFromEventString(sibling.string)
-                eventlist.append([current_date,str(trashtype)])
+                eventlist.append([current_date,trashtype])
         return eventlist
     
     def __getYearFromMonthString(self, month_s):
@@ -109,3 +111,20 @@ class Muellplan(object):
         cal = cal.to_ical()
         cal = cal.decode("utf-8")
         return cal
+    def getNextDateJson(self, street, number, addition):
+        bify = self.__fetchBifyForStreetAndNumber(street,number,addition)
+        eventlist = self.__findTrashEventsInContent(bify)
+        now = date.today()
+        nowlong = datetime.today().strftime("%d.%m.%Y %H:%M:%S")
+        nextevent = ""
+        for event in eventlist:
+            if event[0] > now:
+                nextevent = event
+                break
+        data = {
+                'date': nextevent[0].strftime("%d.%m.%Y"),
+                'type': nextevent[1].getType(),
+                'lastupdate': nowlong
+                }
+        return json.dumps(data)
+
