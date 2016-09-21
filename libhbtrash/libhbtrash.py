@@ -118,7 +118,7 @@ class Muellplan(object):
         nowlong = datetime.today().strftime("%d.%m.%Y %H:%M:%S")
         nextevent = ""
         for event in eventlist:
-            if event[0] > now:
+            if event[0] >= now:
                 nextevent = event
                 break
         data = {
