@@ -22,8 +22,8 @@ class Muell(object):
             return "Tannenbaumabfuhr"
         else:
             return "Unbekannt"
-    def getType(self):
-        return self.typ
+    def __int__(self):
+        return int(self.typ)
     
     
 class Muellplan(object):
@@ -123,7 +123,7 @@ class Muellplan(object):
                 break
         data = {
                 'date': nextevent[0].strftime("%d.%m.%Y"),
-                'type': nextevent[1].getType(),
+                'type': int(nextevent[1]),
                 'lastupdate': nowlong
                 }
         return json.dumps(data)
