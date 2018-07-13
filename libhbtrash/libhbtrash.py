@@ -1,8 +1,12 @@
-
+# -*- encoding: utf-8 -*-
 
 import os
+#from urlparse import urlparse
 import urllib.parse
 import re
+#from urlrequest import urlrequest
+import pycurl
+from io import BytesIO
 import urllib.request
 import json
 from bs4 import BeautifulSoup
@@ -24,8 +28,7 @@ class Muell(object):
             return "Unbekannt"
     def __int__(self):
         return int(self.typ)
-    
-    
+
 class Muellplan(object):
     SERVERPATH="http://213.168.213.236/bremereb/bify/bify.jsp"
 
@@ -36,6 +39,11 @@ class Muellplan(object):
         return ical
 
     def __fetchBifyForStreetAndNumber(self,street,number,addition=''):
+        buffer = BytesIO()
+        c = pycurl.Curl()
+        c.setopt(c.HTTP_VERSION, c.CURL_HTTP_VERSION_1_0)
+        c.setopt(c.WRITEDATA, buffer)
+
         street = urllib.parse.quote(street,encoding="ISO-8859-1")
         number = urllib.parse.quote(number,encoding="ISO-8859-1")
         if addition != '':
@@ -43,9 +51,16 @@ class Muellplan(object):
             url = self.SERVERPATH + "?strasse={}&hausnummer={}&zusatz={}".format(street,number,addition)
         else:
             url = self.SERVERPATH + "?strasse={}&hausnummer={}".format(street,number)
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req) as response:
-            content = response.read()
+        c.setopt(c.URL, url)
+        c.perform()
+        c.close()
+
+        content = buffer.getvalue()
+
+#        req = urllib.request.Request(url)
+#        with urllib.request.urlopen(req) as response:
+#            content = response.read()
+
         content = content.decode("ISO-8859-1")
         content = content.replace("<nobr><br>","</nobr>")#Hack for parsing siblings
         return content
@@ -53,7 +68,7 @@ class Muellplan(object):
     def __findTrashEventsInContent(self,content):
         soup = BeautifulSoup(content, "lxml")
         eventlist = []
-        
+
         for month in soup.find_all("b",text=re.compile("^\w+\s\d{4}")):
             current_year = self.__getYearFromMonthString(month.string)
             for sibling in month.find_next_siblings("nobr",text=re.compile("^(\(\w{2}\)\s)?\d{2}\.\d{2}\.\s")):
@@ -61,7 +76,7 @@ class Muellplan(object):
                 trashtype = self.__getTrashTypeFromEventString(sibling.string)
                 eventlist.append([current_date,trashtype])
         return eventlist
-    
+
     def __getYearFromMonthString(self, month_s):
         year = month_s.split(" ")[1]
         return year
@@ -111,6 +126,7 @@ class Muellplan(object):
         cal = cal.to_ical()
         cal = cal.decode("utf-8")
         return cal
+
     def getNextDateJson(self, street, number, addition):
         bify = self.__fetchBifyForStreetAndNumber(street,number,addition)
         eventlist = self.__findTrashEventsInContent(bify)
@@ -122,9 +138,8 @@ class Muellplan(object):
                 nextevent = event
                 break
         data = {
-                'date': nextevent[0].strftime("%d.%m.%Y"),
+                'date': nextevent[0].isoformat(),
                 'type': int(nextevent[1]),
                 'lastupdate': nowlong
                 }
         return json.dumps(data)
-

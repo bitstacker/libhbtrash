@@ -1,10 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from libhbtrash.libhbtrash import Muellplan
+
 import getopt
 import sys
+import os
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
+from libhbtrash.libhbtrash import Muellplan
 
 def usage():
     text = """usage:
@@ -51,7 +54,7 @@ def main():
         m = Muellplan()
         if onlynext:
             print(m.getNextDateJson(street, number, other))
-        else:    
+        else:
             print(m.getIcal(street, number, other, alarm))
 
 if __name__ == "__main__":
